@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: zepto-support-assistant
+
+    env: docker
+
+    plan: free
+
+    autoDeploy: true
