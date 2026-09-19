@@ -22,25 +22,21 @@ class GraphState(TypedDict):
     confidence: float
 
 
-def agent(state):
+def assistant(state):
 
     logger.info(
-        f"Question: {state['question']}"
+        f"Question received: {state['question']}"
     )
 
     result = retrieve(
         state["question"]
     )
 
-    answer = "\n".join(
-        result["documents"]
-    )
-
     return {
 
         "question": state["question"],
 
-        "answer": answer,
+        "answer": result["answer"],
 
         "sources": result["sources"],
 
@@ -53,16 +49,16 @@ builder = StateGraph(
 )
 
 builder.add_node(
-    "agent",
-    agent
+    "assistant",
+    assistant
 )
 
 builder.set_entry_point(
-    "agent"
+    "assistant"
 )
 
 builder.add_edge(
-    "agent",
+    "assistant",
     END
 )
 
