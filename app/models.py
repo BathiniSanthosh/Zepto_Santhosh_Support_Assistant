@@ -1,10 +1,16 @@
 from pydantic import BaseModel
 from typing import List
+import logging
 
-class AskRequest(BaseModel):
-    query: str
+logger = logging.getLogger(__name__)
+logger.info("models.py loaded")
 
-class AskResponse(BaseModel):
+
+class QueryRequest(BaseModel):
+    question: str
+
+
+class AnswerResponse(BaseModel):
     answer: str
     sources: List[str]
     confidence: float
