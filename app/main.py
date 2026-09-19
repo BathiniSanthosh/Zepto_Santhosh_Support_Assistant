@@ -1,91 +1,142 @@
-from fastapi import FastAPI
-from models import QueryRequest, AnswerResponse
-from graph import graph
-from ingest import ingest_documents, collection
-
 import logging
+import time
+from typing import Dict, List
 
-logging.basicConfig(level=logging.INFO)
+from ingest import collection
+
+# ------------------------------------------------------------------
+# Logging Configuration
+# ------------------------------------------------------------------
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
 
 logger = logging.getLogger(__name__)
 
-logger.info("main.py loaded")
-
-app = FastAPI(
-    title="Zepto Support Assistant"
-)
+logger.info("rag.py loaded successfully")
 
 
-@app.on_event("startup")
-def startup_event():
+# ------------------------------------------------------------------
+# Retrieve Documents
+# ------------------------------------------------------------------
 
-    logger.info("Application startup")
+def retrieve(question: str) -> Dict:
+
+    start_time = time.time()
+
+    logger.info("=" * 60)
+    logger.info(f"RETRIEVE STARTED")
+    logger.info(f"Question: {question}")
 
     try:
 
-        count = collection.count()
+        doc_count = collection.count()
 
         logger.info(
-            f"Collection count = {count}"
+            f"Collection contains {doc_count} documents"
         )
 
-        if count == 0:
+        if doc_count == 0:
 
-            logger.info(
-                "Starting ingestion..."
+            logger.warning(
+                "Collection is empty"
             )
 
-            ingest_documents()
+            return {
+                "documents": [],
+                "sources": [],
+                "confidence": 0.0
+            }
 
-    except Exception as e:
-
-        logger.exception(
-            f"Startup failed: {e}"
+        logger.info(
+            "Running Chroma query..."
         )
 
-
-@app.get("/")
-def root():
-
-    logger.info("Health endpoint called")
-
-    return {
-        "status": "running"
-    }
-
-
-@app.post(
-    "/ask",
-    response_model=AnswerResponse
-)
-def ask(request: QueryRequest):
-
-    logger.info(
-        f"Question received: {request.question}"
-    )
-
-    try:
-
-        result = graph.invoke(
-            {
-                "question": request.question
-            }
+        results = collection.query(
+            query_texts=[question],
+            n_results=3
         )
 
         logger.info(
-            "Graph execution complete"
+            "Chroma query completed successfully"
         )
 
-        return AnswerResponse(
-            answer=result["answer"],
-            sources=result["sources"],
-            confidence=result["confidence"]
+        documents = results.get(
+            "documents",
+            [[]]
+        )[0]
+
+        metadatas = results.get(
+            "metadatas",
+            [[]]
+        )[0]
+
+        logger.info(
+            f"Retrieved {len(documents)} documents"
         )
+
+        sources = []
+
+        for metadata in metadatas:
+
+            if metadata:
+
+                sources.append(
+                    metadata.get(
+                        "source",
+                        "unknown"
+                    )
+                )
+
+        confidence = round(
+            min(
+                len(documents) * 0.30,
+                0.95
+            ),
+            2
+        )
+
+        elapsed = round(
+            time.time() - start_time,
+            2
+        )
+
+        logger.info(
+            f"Retrieval completed in {elapsed}s"
+        )
+
+        logger.info(
+            f"Sources: {sources}"
+        )
+
+        logger.info(
+            f"Confidence: {confidence}"
+        )
+
+        return {
+            "documents": documents,
+            "sources": sources,
+            "confidence": confidence
+        }
 
     except Exception as e:
 
         logger.exception(
-            f"Ask endpoint failed: {e}"
+            f"Retrieval error: {str(e)}"
         )
 
-        raise
+        return {
+            "documents": [],
+            "sources": [],
+            "confidence": 0.0
+        }
+
+    finally:
+
+        logger.info(
+            "RETRIEVE FINISHED"
+        )
+
+        logger.info("=" * 60)
