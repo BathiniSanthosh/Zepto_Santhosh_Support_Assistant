@@ -1,38 +1,64 @@
+from pathlib import Path
+import logging
+
+from db import collection
+
+logger = logging.getLogger(__name__)
+
+logger.info("Loading ingest.py")
+
+
 def ingest_documents():
 
     try:
 
-        count = collection.count()
-
-        logger.info(f"Current document count: {count}")
-
-        if count > 0:
-            logger.info("Skipping ingestion.")
+        if collection is None:
+            logger.error(
+                "Collection not available"
+            )
             return
 
-        docs_folder = Path("docs")
+        if collection.count() > 0:
 
-        if not docs_folder.exists():
-            logger.error("docs folder not found")
+            logger.info(
+                "Documents already exist"
+            )
+
             return
 
         docs = []
         ids = []
         metadatas = []
 
+        docs_folder = Path("docs")
+
+        if not docs_folder.exists():
+
+            logger.error(
+                "docs folder missing"
+            )
+
+            return
+
         for file in docs_folder.glob("*.txt"):
 
-            logger.info(f"Reading {file.name}")
+            logger.info(
+                f"Reading {file.name}"
+            )
 
-            content = file.read_text(
+            text = file.read_text(
                 encoding="utf-8"
             )
 
-            docs.append(content)
+            docs.append(text)
+
             ids.append(file.stem)
-            metadatas.append({
-                "source": file.name
-            })
+
+            metadatas.append(
+                {
+                    "source": file.name
+                }
+            )
 
         if docs:
 
@@ -42,11 +68,16 @@ def ingest_documents():
                 metadatas=metadatas
             )
 
-        logger.info(
-            f"Ingested {len(docs)} documents"
-        )
+            logger.info(
+                f"{len(docs)} documents added"
+            )
 
     except Exception as e:
+
         logger.exception(
             f"Ingestion failed: {e}"
         )
+
+
+if __name__ == "__main__":
+    ingest_documents()
