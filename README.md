@@ -302,21 +302,281 @@ This project demonstrates a complete analytics-to-machine-learning workflow, sta
 
 
 
+**Module 3**
+**Zepto Support Assistant**
+
+A Retrieval-Augmented Generation (RAG) based customer support assistant built for Zepto using **FastAPI, LangGraph, ChromaDB, and Pydantic**.
+
+The application answers customer queries related to Zepto policies such as:
+
+Delivery Policy
+Return & Refund Policy
+Membership Plans
+Order Tracking
+Order Cancellation
+Damaged/Missing Items
+Gift Cards
+Customer Support Hours
+
+The system uses a LangGraph-powered workflow, retrieves relevant policy documents from a vector database, and returns structured JSON responses with confidence scores and source references.
 
 
+**Project Objectives**
+
+This project demonstrates:
+
+Document ingestion
+
+Vector embeddings and retrieval
+
+ChromaDB integration
+
+LangGraph orchestration
+
+Intent classification
+
+Structured JSON responses
+
+FastAPI REST API
+
+Docker containerization
+
+Cloud deployment using Render
+
+**Architecture Overview**
+User Query
+    │
+    ▼
+LangGraph Workflow
+    │
+    ▼
+Intent Classification
+    │
+ ┌──┴─────────────┐
+ │                │
+ ▼                ▼
+Policy Query   General Query
+ │                │
+ ▼                ▼
+Retrieve Docs   Direct Answer
+ │
+ ▼
+ChromaDB Search
+ │
+ ▼
+Generate Response
+ │
+ ▼
+Pydantic Validation
+ │
+ ▼
+JSON Response
 
 
+**Project Structure**
+Zepto_Santhosh_Support_Assistant/
+│
+├── app/
+│   │
+│   ├── docs/
+│   │    ├── doc_01.txt
+│   │    ├── doc_02.txt
+│   │    ├── doc_03.txt
+│   │    ├── doc_04.txt
+│   │    ├── doc_05.txt
+│   │    ├── doc_06.txt
+│   │    ├── doc_07.txt
+│   │    └── doc_08.txt
+│   │
+│   ├── db.py
+│   ├── ingest.py
+│   ├── rag.py
+│   ├── graph.py
+│   ├── prompts.py
+│   ├── models.py
+│   ├── main.py
+│   ├── Dockerfile
+│   ├── render.yaml
+│   ├── requirements.txt
+│   └── test.py
+│
+└── README.md
+
+**Requirements Explanation**
+
+fastapi
+uvicorn
+chromadb
+langgraph
+pydantic
+
+**FastAPI**
+Used to create REST APIs and expose the /ask endpoint.
+**Purpose**
+API development
+Request handling
+Response serialization
+
+**Uvicorn**
+ASGI web server used to run FastAPI applications.
+Purpose
+uvicorn main:app --reload
+Starts FastAPI server
+Handles incoming requests
 
 
+**ChromaDB**
+Vector database used for storing and searching embedded policy documents.
+**Purpose**
+Stores document embeddings
+Semantic similarity search
+Retrieves top matching policy chunks
+
+**LangGraph**
+Used for workflow orchestration.
+**Purpose**
+Controls the application flow:
+
+classify_intent
+        │
+        ▼
+retrieve_and_answer
+        OR
+direct_answer
+
+**Pydantic**
+Data validation framework.
+**Purpose**
+Validates request and response schemas.
+Example:
+{
+  "answer": "Refunds are processed...",
+  "sources": ["doc_02"],
+  "confidence": 1.0
+}
 
 
+**Module Explanation**
+1. ingest.py
+Responsible for loading policy documents.
+Tasks
+Read all 8 documents
+Create chunks
+Prepare data for storage
+**2. db.py**
+Handles ChromaDB operations.
+**Tasks**
+Create collection
+Store embeddings
+Retrieve matching documents
 
+**3. rag.py**
+Contains Retrieval-Augmented Generation logic.
+**Tasks**
+Receive query
+Search vector database
+Return relevant chunks
 
+**4. prompts.py**
+Stores structured prompt templates.
+Uses:
+Role
+Context
+Task
+Format
+Length
+**5. graph.py**
+Contains LangGraph workflow.
+Nodes
+classify_intent
+Determines whether query is:
+policy_question
 
+**retrieve_and_answer**
+For policy-related questions.
+**Steps:**
+Retrieve documents
+Build answer
+Return sources
 
+**direct_answer**
+For non-policy questions.
+Returns:
+I can only answer questions about Zepto policies right now.
 
+**6. models.py**
+Contains Pydantic models.
+**QueryRequest**
+{
+    "query": str
+}
+**AnswerResponse**
+{
+   "answer": str,
+   "sources": list,
+   "confidence": float
+}
 
+**7. main.py**
+FastAPI entrypoint.
+Provides:
 
+**LangGraph Workflow**
+START
+  │
+  ▼
+classify_intent
+  │
+  ├────────────► direct_answer
+  │
+  ▼
+retrieve_and_answer
+  │
+  ▼
+END
 
+**
+Example API Calls
+Example 1: Policy Question**
+**Request**
+{
+    "query": "What is the refund policy?"
+}
+**Response**
+{
+  "answer": "Based on the retrieved context: Grocery and perishable items may be reported for a return within 24 hours...",
+  "sources": [
+    "doc_02"
+  ],
+  "confidence": 1.0
+}
 
+**Example 2: General Question**
+**Request**
+{
+    "query": "Who won the cricket world cup?"
+}
+**Response**
+{
+  "answer": "I can only answer questions about Zepto policies right now.",
+  "sources": [],
+  "confidence": 1.0
+}
 
+**Deployment**
+The application was deployed successfully using Render.
+
+**Deployment URL**
+https://zepto-santhosh-support-assistant.onrender.com
+https://zepto-santhosh-support-assistant.onrender.com/docs
+
+**Features Verified**
+
+FastAPI application startup
+API documentation
+LangGraph execution
+ChromaDB retrieval
+JSON responses
+
+**Conclusion**
+This project implements a complete GenAI-powered Zepto Support Assistant using a Retrieval-Augmented Generation (RAG) architecture. The solution combines FastAPI, LangGraph, ChromaDB, Pydantic, and Docker to provide grounded, structured, and scalable responses to customer support questions. The application satisfies all Module 3 requirements and has been successfully deployed on Render for public access and testing.
