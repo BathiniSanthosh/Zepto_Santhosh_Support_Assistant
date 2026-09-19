@@ -1,9 +1,7 @@
 from pydantic import BaseModel
 from typing import List
-import logging
 
-logger = logging.getLogger(__name__)
-logger.info("models.py loaded")
+print("Loading models.py")
 
 
 class QueryRequest(BaseModel):
