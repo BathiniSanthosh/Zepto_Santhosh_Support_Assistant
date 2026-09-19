@@ -1,40 +1,49 @@
-import os
+from pathlib import Path
 import chromadb
 
-from sentence_transformers import SentenceTransformer
+# Create Chroma client
+client = chromadb.PersistentClient(path="./chroma_db")
 
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
-
-client = chromadb.PersistentClient(
-    path="chroma_db"
-)
-
+# Create collection if it doesn't exist
 collection = client.get_or_create_collection(
-    name="zepto_support"
+    name="zepto_docs"
 )
 
-docs_folder = "docs"
 
-for filename in os.listdir(docs_folder):
+def ingest_documents():
 
-    path = os.path.join(
-        docs_folder,
-        filename
+    existing = collection.count()
+
+    if existing > 0:
+        print(f"Collection already contains {existing} documents.")
+        return
+
+    docs_folder = Path("docs")
+
+    if not docs_folder.exists():
+        print("Docs folder not found.")
+        return
+
+    for file in docs_folder.glob("*.txt"):
+
+        content = file.read_text(
+            encoding="utf-8"
+        )
+
+        collection.add(
+            ids=[file.stem],
+            documents=[content],
+            metadatas=[
+                {"source": file.name}
+            ]
+        )
+
+        print(f"Added: {file.name}")
+
+    print(
+        f"Ingestion complete. Total documents: {collection.count()}"
     )
 
-    with open(path,"r",encoding="utf-8") as f:
-        text = f.read()
 
-    embedding = model.encode(
-        text
-    ).tolist()
-
-    collection.add(
-        ids=[filename],
-        documents=[text],
-        embeddings=[embedding]
-    )
-
-print("Loaded documents.")
+if __name__ == "__main__":
+    ingest_documents()
