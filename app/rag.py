@@ -1,28 +1,59 @@
-import chromadb
+import logging
 
-client = chromadb.PersistentClient(
-    path="./chroma_db"
-)
+from db import collection
 
-collection = client.get_or_create_collection(
-    name="zepto_docs"
-)
+logger = logging.getLogger(__name__)
+
+logger.info("Loading rag.py")
 
 
-def retrieve(question: str):
+def retrieve(question):
 
-    if collection.count() == 0:
-        return (
-            "No documents available.",
-            "No source"
+    try:
+
+        if collection is None:
+
+            return {
+                "documents": [],
+                "sources": [],
+                "confidence": 0.0
+            }
+
+        results = collection.query(
+            query_texts=[question],
+            n_results=3
         )
 
-    results = collection.query(
-        query_texts=[question],
-        n_results=1
-    )
+        documents = results["documents"][0]
+        metadatas = results["metadatas"][0]
 
-    document = results["documents"][0][0]
-    source = results["metadatas"][0][0]["source"]
+        sources = []
 
-    return document, source
+        for meta in metadatas:
+
+            sources.append(
+                meta.get("source", "unknown")
+            )
+
+        confidence = min(
+            len(documents) * 0.3,
+            0.95
+        )
+
+        return {
+            "documents": documents,
+            "sources": sources,
+            "confidence": confidence
+        }
+
+    except Exception as e:
+
+        logger.exception(
+            f"Retrieval failed: {e}"
+        )
+
+        return {
+            "documents": [],
+            "sources": [],
+            "confidence": 0.0
+        }
