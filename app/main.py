@@ -12,25 +12,20 @@ app = FastAPI(
     title="Zepto Support Assistant"
 )
 
-
 @app.on_event("startup")
 def startup_event():
-
     if collection.count() == 0:
         ingest_documents()
-
 
 @app.get("/")
 def root():
     return {"status": "running"}
-
 
 @app.post(
     "/ask",
     response_model=AnswerResponse
 )
 def ask(request: QueryRequest):
-
     result = graph.invoke({
         "question": request.question
     })
