@@ -1,23 +1,11 @@
-import logging
-
 from db import collection
 
-logger = logging.getLogger(__name__)
-
-logger.info("Loading rag.py")
+CONFIDENCE_THRESHOLD = 0.4
 
 
 def retrieve(question):
 
     try:
-
-        if collection is None:
-
-            return {
-                "documents": [],
-                "sources": [],
-                "confidence": 0.0
-            }
 
         results = collection.query(
             query_texts=[question],
@@ -27,33 +15,46 @@ def retrieve(question):
         documents = results["documents"][0]
         metadatas = results["metadatas"][0]
 
-        sources = []
+        if not documents:
 
-        for meta in metadatas:
+            return {
+                "status": "no_match",
+                "answer": "Sorry, I could not find any information related to your question in the Zepto knowledge base.",
+                "sources": [],
+                "confidence": 0.0
+            }
 
-            sources.append(
-                meta.get("source", "unknown")
-            )
+        sources = [
+            m.get("source", "unknown")
+            for m in metadatas
+        ]
 
         confidence = min(
             len(documents) * 0.3,
-            0.95
+            0.9
         )
 
+        if confidence < CONFIDENCE_THRESHOLD:
+
+            return {
+                "status": "low_confidence",
+                "answer": "The question does not appear to be related to Zepto support documents.",
+                "sources": [],
+                "confidence": confidence
+            }
+
         return {
-            "documents": documents,
+            "status": "success",
+            "answer": documents[0],
             "sources": sources,
             "confidence": confidence
         }
 
     except Exception as e:
 
-        logger.exception(
-            f"Retrieval failed: {e}"
-        )
-
         return {
-            "documents": [],
+            "status": "error",
+            "answer": f"Error: {str(e)}",
             "sources": [],
             "confidence": 0.0
         }
