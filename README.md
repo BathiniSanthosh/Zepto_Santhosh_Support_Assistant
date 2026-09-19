@@ -1,3 +1,4 @@
+**Module 1: ** 
 **Data Pipeline - Books to SQLite ETL**
 **Overview**
 This project builds an end-to-end data pipeline that scrapes book data from BooksToScrape, cleans and transforms the data, converts prices from EURO to INR, stores it in a normalized SQLite database, and performs SQL and pandas-based analysis.
