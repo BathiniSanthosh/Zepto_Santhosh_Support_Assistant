@@ -1,24 +1,42 @@
 from fastapi import FastAPI
 
-from app.graph import graph
-from app.models import AskRequest
-from app.models import AskResponse
+from models import (
+    QueryRequest,
+    AnswerResponse
+)
 
-app = FastAPI()
+from graph import graph
+from ingest import ingest_documents, collection
+
+app = FastAPI(
+    title="Zepto Support Assistant"
+)
+
+
+@app.on_event("startup")
+def startup_event():
+
+    if collection.count() == 0:
+        ingest_documents()
+
+
+@app.get("/")
+def root():
+    return {"status": "running"}
 
 
 @app.post(
     "/ask",
-    response_model=AskResponse
+    response_model=AnswerResponse
 )
-def ask(request: AskRequest):
+def ask(request: QueryRequest):
 
     result = graph.invoke({
-        "query": request.query
+        "question": request.question
     })
 
-    return AskResponse(
+    return AnswerResponse(
         answer=result["answer"],
         sources=result["sources"],
-        confidence=1.0
+        confidence=result["confidence"]
     )
