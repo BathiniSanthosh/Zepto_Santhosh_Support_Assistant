@@ -1,49 +1,52 @@
-from pathlib import Path
-import chromadb
-
-# Create Chroma client
-client = chromadb.PersistentClient(path="./chroma_db")
-
-# Create collection if it doesn't exist
-collection = client.get_or_create_collection(
-    name="zepto_docs"
-)
-
-
 def ingest_documents():
 
-    existing = collection.count()
+    try:
 
-    if existing > 0:
-        print(f"Collection already contains {existing} documents.")
-        return
+        count = collection.count()
 
-    docs_folder = Path("docs")
+        logger.info(f"Current document count: {count}")
 
-    if not docs_folder.exists():
-        print("Docs folder not found.")
-        return
+        if count > 0:
+            logger.info("Skipping ingestion.")
+            return
 
-    for file in docs_folder.glob("*.txt"):
+        docs_folder = Path("docs")
 
-        content = file.read_text(
-            encoding="utf-8"
+        if not docs_folder.exists():
+            logger.error("docs folder not found")
+            return
+
+        docs = []
+        ids = []
+        metadatas = []
+
+        for file in docs_folder.glob("*.txt"):
+
+            logger.info(f"Reading {file.name}")
+
+            content = file.read_text(
+                encoding="utf-8"
+            )
+
+            docs.append(content)
+            ids.append(file.stem)
+            metadatas.append({
+                "source": file.name
+            })
+
+        if docs:
+
+            collection.add(
+                ids=ids,
+                documents=docs,
+                metadatas=metadatas
+            )
+
+        logger.info(
+            f"Ingested {len(docs)} documents"
         )
 
-        collection.add(
-            ids=[file.stem],
-            documents=[content],
-            metadatas=[
-                {"source": file.name}
-            ]
+    except Exception as e:
+        logger.exception(
+            f"Ingestion failed: {e}"
         )
-
-        print(f"Added: {file.name}")
-
-    print(
-        f"Ingestion complete. Total documents: {collection.count()}"
-    )
-
-
-if __name__ == "__main__":
-    ingest_documents()
