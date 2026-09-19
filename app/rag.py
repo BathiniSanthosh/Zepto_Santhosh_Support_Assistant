@@ -1,28 +1,28 @@
 import chromadb
 
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
-
 client = chromadb.PersistentClient(
-    path="chroma_db"
+    path="./chroma_db"
 )
 
-collection = client.get_collection(
-    "zepto_support"
+collection = client.get_or_create_collection(
+    name="zepto_docs"
 )
 
-def retrieve(query):
 
-    query_embedding = model.encode(
-        query
-    ).tolist()
+def retrieve(question: str):
+
+    if collection.count() == 0:
+        return (
+            "No documents available.",
+            "No source"
+        )
 
     results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=3
+        query_texts=[question],
+        n_results=1
     )
 
-    return results
+    document = results["documents"][0][0]
+    source = results["metadatas"][0][0]["source"]
+
+    return document, source
